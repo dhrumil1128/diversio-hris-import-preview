@@ -177,11 +177,12 @@ For approximately 100,000 employees:
 - **Hierarchy analysis**: O(n) - single pass through relationships + employees
 - **Cycle detection**: O(n) - iterative DFS visits each node/edge once
 
-## Implementation & Testing Time
-**Note**: This implementation was developed during local preparation phase. The official 90-minute assessment clock has NOT started. Implementation and testing time will be recorded during the official assessment.
 
 ## AI Tools Used
-AI assistance was used during development for code generation, review, and debugging across all implementation stages.
+
+OpenCode was used during development for code generation, implementation support, code review, debugging, and testing assistance.
+
+The final implementation, project structure, validation behavior, hierarchy logic, cycle detection, and test suite were reviewed and verified as part of the development process.
 
 ## License
 Assessment project for Diversio Engineer I technical evaluation.
