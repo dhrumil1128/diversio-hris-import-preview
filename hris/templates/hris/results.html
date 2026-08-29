@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRIS Import Preview — Results</title>
+    {% load hris_extras %}
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #dbeafe;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --error: #dc2626;
+            --error-light: #fee2e2;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .app-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+
+        .back-link:hover {
+            background: var(--background);
+            border-color: var(--text-muted);
+            color: var(--text);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-description {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .summary-card.error .summary-value {
+            color: var(--error);
+        }
+
+        .summary-card.cycles .summary-value {
+            color: var(--warning);
+        }
+
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--background);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .section-count {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .section-content {
+            padding: 1rem 1.5rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background-color: var(--background);
+        }
+
+        .employee-id {
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 0.8125rem;
+            color: var(--text);
+        }
+
+        .employee-name {
+            font-weight: 500;
+        }
+
+        .direct-reports {
+            text-align: right;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-error {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .badge-warning {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: var(--border);
+        }
+
+        .empty-state-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.375rem;
+        }
+
+        .empty-state-description {
+            font-size: 0.875rem;
+        }
+
+        .empty-state.success .empty-state-icon {
+            color: var(--success);
+        }
+
+        .empty-state.success .empty-state-title {
+            color: var(--success);
+        }
+
+        .status-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .back-link {
+                margin-top: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            th, td {
+                padding: 0.625rem 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1 class="app-title">Import Preview</h1>
+                <p class="app-subtitle">Your CSV has been analyzed. Review the results below.</p>
+            </div>
+            <a href="{% url 'hris:upload' %}" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="12 19 5 12 12 5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Analyze Another File
+            </a>
+        </header>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Source Rows</div>
+                <div class="summary-value">{{ analysis.total_source_rows }}</div>
+                <div class="summary-description">Records analyzed</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Accepted Employees</div>
+                <div class="summary-value">{{ analysis.accepted_employees|length }}</div>
+                <div class="summary-description">Passed identity validation</div>
+            </div>
+            <div class="summary-card {% if analysis.validation_errors|length > 0 %}error{% endif %}">
+                <div class="summary-label">Validation Errors</div>
+                <div class="summary-value">{{ analysis.validation_errors|length }}</div>
+                <div class="summary-description">Row-level issues</div>
+            </div>
+            <div class="summary-card {% if analysis.cyclic_employee_ids|length > 0 %}cycles{% endif %}">
+                <div class="summary-label">Reporting Cycles</div>
+                <div class="summary-value">{{ analysis.cyclic_employee_ids|length }}</div>
+                <div class="summary-description">Employees in cycles</div>
+            </div>
+        </div>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Validation Errors</h2>
+                <span class="section-count">{{ analysis.validation_errors|length }} issue{% if analysis.validation_errors|length != 1 %}s{% endif %}</span>
+            </div>
+            <div class="section-content">
+                {% if analysis.validation_errors %}
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Source Row</th>
+                                    <th>Issue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for error in analysis.validation_errors %}
+                                <tr>
+                                    <td><span class="employee-id">{{ error.row_number }}</span></td>
+                                    <td>
+                                        <div class="status-cell">
+                                            <span class="badge badge-error">Error</span>
+                                            <span>{{ error.message }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state success">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="empty-state-title">All rows passed validation</div>
+                        <div class="empty-state-description">No identity or manager reference issues were found.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Root Employees</h2>
+                <span class="section-count">{{ analysis.root_employee_ids|length }}</span>
+            </div>
+            <div class="section-content">
+                {% if analysis.root_employee_ids %}
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Employee Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp_id in analysis.root_employee_ids %}
+                                <tr>
+                                    <td><span class="employee-id">{{ emp_id }}</span></td>
+                                    <td class="employee-name">{{ employee_names|get_item:emp_id }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="8" x2="12" y2="12" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="empty-state-title">No root employees</div>
+                        <div class="empty-state-description">All accepted employees have a valid manager reference.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Managers / Direct Reports</h2>
+                <span class="section-count">{{ analysis.manager_summaries|length }}</span>
+            </div>
+            <div class="section-content">
+                {% if analysis.manager_summaries %}
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Manager</th>
+                                    <th>Employee ID</th>
+                                    <th>Direct Reports</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mgr in analysis.manager_summaries %}
+                                <tr>
+                                    <td class="employee-name">{{ mgr.name }}</td>
+                                    <td><span class="employee-id">{{ mgr.employee_id }}</span></td>
+                                    <td class="direct-reports">{{ mgr.direct_report_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="empty-state-title">No managers with direct reports</div>
+                        <div class="empty-state-description">No accepted employees have valid reporting relationships.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Reporting Cycles</h2>
+                <span class="section-count">{{ analysis.cyclic_employee_ids|length }}</span>
+            </div>
+            <div class="section-content">
+                {% if analysis.cyclic_employee_ids %}
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Employee ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp_id in analysis.cyclic_employee_ids %}
+                                <tr>
+                                    <td>
+                                        <div class="status-cell">
+                                            <span class="badge badge-warning">Cycle Member</span>
+                                            <span class="employee-name">{{ employee_names|get_item:emp_id }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="employee-id">{{ emp_id }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state success">
+                        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="empty-state-title">No reporting cycles detected</div>
+                        <div class="empty-state-description">The reporting hierarchy contains no circular references.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</body>
+</html>

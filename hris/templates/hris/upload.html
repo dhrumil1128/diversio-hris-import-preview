@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRIS Import Preview</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #dbeafe;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --error: #dc2626;
+            --error-light: #fee2e2;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .app-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .app-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 2.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            transition: border-color 0.2s, background-color 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .upload-area:has(input:focus-visible) {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: var(--text-muted);
+        }
+
+        .upload-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.375rem;
+        }
+
+        .upload-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-input::file-selector-button {
+            position: relative;
+            z-index: 1;
+            opacity: 1;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-input::file-selector-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .selected-file {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--primary-light);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .selected-file.visible {
+            display: flex;
+        }
+
+        .selected-file-name {
+            font-weight: 500;
+            color: var(--primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .selected-file-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .selected-file-remove:hover {
+            color: var(--error);
+            background-color: var(--error-light);
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 0.875rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1rem;
+            background: var(--error-light);
+            border: 1px solid var(--error);
+            border-radius: var(--radius);
+            color: var(--error);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+
+        .error-message.visible {
+            display: flex;
+        }
+
+        .info-section {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .info-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-text {
+            font-size: 0.875rem;
+            color: var(--text);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1.5rem 0.75rem;
+            }
+            .upload-card {
+                padding: 1.5rem;
+            }
+            .upload-area {
+                padding: 2rem 1.5rem;
+            }
+            .app-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="app-title">HRIS Import Preview</h1>
+            <p class="app-subtitle">Review employee data and reporting relationships before import.</p>
+        </header>
+
+        <main>
+            <div class="upload-card">
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    {% csrf_token %}
+
+                    <div class="upload-area" id="upload-area">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="upload-title">Upload your HRIS CSV</div>
+                        <p class="upload-description">Drag and drop your file here, or browse</p>
+                        <div class="upload-formats">CSV files only &bull; UTF-8 supported</div>
+
+                        {{ form.csv_file }}
+
+                        <div class="selected-file" id="selected-file" role="status" aria-live="polite">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"/>
+                                <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="selected-file-name" id="selected-file-name"></span>
+                            <button type="button" class="selected-file-remove" id="remove-file" aria-label="Remove selected file">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {% if form.csv_file.errors %}
+                        <div class="error-message visible" role="alert">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="8" x2="12" y2="12" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            {% for error in form.csv_file.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="submit-btn" id="submit-btn">
+                        Analyze Import
+                    </button>
+                </form>
+
+                <section class="info-section">
+                    <div class="info-title">Privacy & Security</div>
+                    <p class="info-text">Your file is analyzed in memory. No employee or reporting data is stored.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = uploadArea.querySelector('input[type="file"]');
+            const selectedFile = document.getElementById('selected-file');
+            const selectedFileName = document.getElementById('selected-file-name');
+            const removeFileBtn = document.getElementById('remove-file');
+            const submitBtn = document.getElementById('submit-btn');
+            const form = document.getElementById('upload-form');
+
+            if (!fileInput) return;
+
+            function updateSelectedFile(file) {
+                if (file) {
+                    selectedFileName.textContent = file.name;
+                    selectedFile.classList.add('visible');
+                    submitBtn.disabled = false;
+                } else {
+                    selectedFile.classList.remove('visible');
+                    submitBtn.disabled = true;
+                }
+            }
+
+            fileInput.addEventListener('change', function(e) {
+                updateSelectedFile(e.target.files[0]);
+            });
+
+            removeFileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.value = '';
+                updateSelectedFile(null);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.add('drag-over');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.remove('drag-over');
+                });
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateSelectedFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            form.addEventListener('submit', function() {
+                if (!fileInput.files.length) {
+                    e.preventDefault();
+                }
+            });
+
+            updateSelectedFile(null);
+        })();
+    </script>
+</body>
+</html>
